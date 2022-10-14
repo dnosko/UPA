@@ -1,7 +1,7 @@
 VENV = .venv
 PYTHON = $(VENV)/bin/python3
 PIP = $(VENV)/bin/pip
-MAIN = src.main
+MAIN = src/main.py
 
 .DEFAULT: help
 
@@ -15,7 +15,7 @@ help:
 
 #run script
 run:
-	$(PYTHON) -m $(MAIN)
+	$(PYTHON) $(MAIN)
 
 create-env:
 	python3 -m venv $(VENV)
