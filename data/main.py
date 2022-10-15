@@ -1,5 +1,4 @@
-from data.src.Downloader.downloader import download
-
+from src.Downloader.downloader import download
 def main():
     download()
 
