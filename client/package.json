@@ -1,0 +1,71 @@
+{
+  "name": "traffic_app",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "@types/lodash": "^4.14.185",
+    "@types/node": "^16.7.13",
+    "@types/react": "^18.0.0",
+    "@types/react-dom": "^18.0.0",
+    "@types/react-linkify": "^1.0.1",
+    "@types/styled-components": "^5.1.26",
+    "lodash": "^4.17.21",
+    "react": "^18.2.0",
+
+    "react-dom": "^18.2.0",
+    "react-linkify": "^1.0.0-alpha",
+    "react-scripts": "5.0.1",
+    "react-spinners": "^0.13.4",
+    "typescript": "*",
+    "web-vitals": "^2.1.0"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^5.0.0",
+    "@typescript-eslint/parser": "^5.36.1",
+    "eslint": "^8.0.1",
+    "eslint-config-airbnb": "19.0.4",
+    "eslint-config-airbnb-typescript": "17.0.0",
+    "eslint-config-prettier": "^8.5.0",
+    "eslint-config-standard-with-typescript": "^22.0.0",
+    "eslint-plugin-import": "^2.25.2",
+    "eslint-plugin-jsx-a11y": "^6.5.1",
+    "eslint-plugin-n": "^15.0.0",
+    "eslint-plugin-prettier": "^4.2.1",
+    "eslint-plugin-promise": "^6.0.0",
+    "eslint-plugin-react": "^7.31.1",
+    "eslint-plugin-react-hooks": "^4.3.0",
+    "eslint-plugin-tsdoc": "^0.2.17",
+    "husky": "^8.0.1",
+    "prettier": "^2.7.1"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject",
+    "lint": "eslint .",
+    "lint-fix": "eslint --fix . ",
+    "prepare": "cd .. && husky install client/.husky"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app"
+    ],
+    "rules": {},
+    "parserOptions": {
+      "ecmaFeatures": {}
+    }
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}
