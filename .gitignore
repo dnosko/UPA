@@ -4,7 +4,7 @@ client/build
 /coverage
 /.idea
 /.vscode
-
+data/download_data/*
 
 # misc
 client/.DS_Store
