@@ -7,8 +7,6 @@ import os
 
 PATH_TO_SAVE = 'download_data/'
 
-
-
 def downloadGVZIP():
 
     isExist = os.path.exists(PATH_TO_SAVE)
@@ -16,9 +14,9 @@ def downloadGVZIP():
         # Create a new directory because it does not exist
         os.makedirs(PATH_TO_SAVE)
         name = GVD_2022_zip.split('/')[-1]
-        wget.download(GVD_2022_zip,PATH_TO_SAVE+os.sep+name)
+        if not os.path.exists(PATH_TO_SAVE+os.sep+name):
+            wget.download(GVD_2022_zip,PATH_TO_SAVE+os.sep+name)
 def downloadAllZip():
-
 
     list_of_websites = []
     for number in range(1,11):
@@ -36,7 +34,6 @@ def downloadAllZip():
         saving_destinations = PATH_TO_SAVE+os.sep+name_of_folder
         isExist = os.path.exists(saving_destinations)
         if not isExist:
-            # Create a new directory because it does not exist
             os.makedirs(saving_destinations)
 
         page = requests.get(website)
@@ -48,11 +45,8 @@ def downloadAllZip():
             for link in links:
                 name = link.text
                 link_name = link['href']
-                print(DOMAIN+link_name)
-                wget.download(DOMAIN+link_name, saving_destinations + os.sep +name)
-
-
-
+                if not os.path.exists(saving_destinations + os.sep + name):
+                    wget.download(DOMAIN+link_name, saving_destinations + os.sep + name)
 
 def download():
     downloadAllZip()
