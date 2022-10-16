@@ -9,6 +9,7 @@ class Queries:
     canceled = 'canceledTrains'
     reroute = 'rerouteTrains'
 
+
     def __init__(self, db: MongoDB):
         try:
             self.plannedTrains = db.create_collection(self.planned)
