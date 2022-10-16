@@ -9,9 +9,9 @@
     "@types/react-dom": "^18.0.0",
     "@types/react-linkify": "^1.0.1",
     "@types/styled-components": "^5.1.26",
+    "antd": "^4.23.5",
     "lodash": "^4.17.21",
     "react": "^18.2.0",
-
     "react-dom": "^18.2.0",
     "react-linkify": "^1.0.0-alpha",
     "react-scripts": "5.0.1",
