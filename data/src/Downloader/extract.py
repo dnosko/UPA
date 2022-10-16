@@ -14,6 +14,5 @@ def extract_files(directory: str = "download_data/*/", pattern:str = '*.xml.zip'
                     with gzip.open(file_path, 'rb') as f_in:
                         with open(f"{root}{filename}.xml", 'wb') as f_out:
                             shutil.copyfileobj(f_in, f_out)
-                            os.remove(file_path)
                 except gzip.BadGzipFile:
                     continue
