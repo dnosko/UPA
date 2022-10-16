@@ -1,5 +1,16 @@
 .App {
   text-align: center;
+  width: 100%;
+}
+.InputsContainer {
+  width: 300px;
+  align-content: center;
+  margin: 10px;
+  display: inline-block;
+}
+
+.Input{
+  margin: 6px;
 }
 
 .App-logo {
@@ -7,10 +18,12 @@
   pointer-events: none;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
+.DatepickerContainer {
+  margin-bottom: 10px;
+}
+
+.buttonContainer {
+  margin-bottom: 10px;
 }
 
 .App-header {
@@ -26,13 +39,4 @@
 
 .App-link {
   color: #61dafb;
-}
-
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
 }
