@@ -12,7 +12,7 @@ client/.env.local
 client/.env.development.local
 client/.env.test.local
 client/.env.production.local
-
+client/node_modules
 client/npm-debug.log*
 client/yarn-debug.log*
 client/yarn-error.log*
