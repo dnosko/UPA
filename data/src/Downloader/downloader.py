@@ -1,11 +1,18 @@
 from .CONSTANTS import GVD_2022_zip, TARGET_URL,DOMAIN
 from bs4 import BeautifulSoup
 import requests
+from multiprocessing import Pool, cpu_count
 
 import wget
 import os
 
 PATH_TO_SAVE = 'download_data/'
+
+
+def regularDownload(custom_tuple):
+    name, link_name, saving_destinations = custom_tuple
+    if not os.path.exists(saving_destinations + os.sep + name):
+        wget.download(DOMAIN + link_name, saving_destinations + os.sep + name)
 
 def downloadGVZIP():
 
@@ -42,11 +49,13 @@ def downloadAllZip():
         if len(links):
             if links[0].text == '[To Parent Directory]':
                 links = links[1:]
-            for link in links:
-                name = link.text
-                link_name = link['href']
-                if not os.path.exists(saving_destinations + os.sep + name):
-                    wget.download(DOMAIN+link_name, saving_destinations + os.sep + name)
+            new_links = [(x.text, x['href'], saving_destinations) for x in links]
+
+            pool = Pool(cpu_count())
+            results = pool.map(regularDownload, new_links)
+            pool.close()
+            pool.join()
+
 
 def download():
     downloadAllZip()

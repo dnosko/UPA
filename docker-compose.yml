@@ -1,0 +1,27 @@
+version: '3.9'
+
+services:
+
+    client:
+        build:
+            context: ./client
+            dockerfile: Dockerfile
+        tty: true
+        ports:
+            - "3000:3000"
+        volumes:
+            - ./frontend:/app
+            - /app/node_modules
+        networks:
+            - frontend
+
+
+
+networks:
+    frontend:
+        driver: bridge
+
+volumes:
+
+    appdata:
+        driver: local
