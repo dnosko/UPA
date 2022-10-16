@@ -5,6 +5,7 @@ client/build
 /.idea
 /.vscode
 data/download_data/*
+data/extract_data/*
 
 # misc
 client/.DS_Store
