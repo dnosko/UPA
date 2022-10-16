@@ -1,3 +1,4 @@
+import pymongo.collection
 from pymongo import MongoClient
 import logging
 
@@ -10,6 +11,10 @@ class MongoDB:
 
     def create_collection(self, name: str):
         return self.db.create_collection(name)
+
+    @staticmethod
+    def delete_collection(f: pymongo.collection.Collection):
+        f.delete_many({})
 
     def test_database(self):
         test_collection = self.create_collection('testdb')
