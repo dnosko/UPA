@@ -1,7 +1,7 @@
 import React from 'react';
 import { Input } from 'antd';
 import './App.css';
-import { Space, Table, Tag } from 'antd';
+import {Table, Tag } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { Button } from 'antd';
 import "antd/dist/antd.css";
@@ -25,7 +25,7 @@ const columns: ColumnsType<DataType> = [
     title: 'Odkud',
     dataIndex: 'odkud',
     key: 'odkud',
-    render: text => <a>{text}</a>,
+    render: text => <a href={"./"}>{text}</a>,
   },
   {
     title: 'Kam',
@@ -145,7 +145,6 @@ function App() {
 
   return (
     <div className="App">
-      <a></a>
       <div className='InputsContainer'>
         <Input className='Input' name='odkud' placeholder="Zadajte východziu stanicu" allowClear onChange={onInputChange} />
         <Input className='Input' name='kam' placeholder="Zadajte cielovu stanicu" allowClear onChange={onInputChange} />
