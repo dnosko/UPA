@@ -3,6 +3,7 @@ import fnmatch
 import shutil
 from glob import glob
 import gzip
+import zipfile
 
 def extract_files(directory: str = "download_data", pattern:str = '*.xml.zip') -> None:
     for subdirectory in glob(directory+'/*/', recursive=True):
@@ -19,4 +20,8 @@ def extract_files(directory: str = "download_data", pattern:str = '*.xml.zip') -
                             with open(f"{dest_path}{filename}.xml", 'wb') as f_out:
                                 shutil.copyfileobj(f_in, f_out)
                 except gzip.BadGzipFile:
-                    continue
+                    with zipfile.ZipFile(file_path, 'r') as f_in:
+                        f_in.extractall(dest_path)
+
+if __name__ == "__main__":
+    extract_files()

@@ -10,7 +10,7 @@ class Parser:
     def __init__(self):
         self.msg_type = None
 
-    def parse_file(self, file) -> dict:
+    def parse_file(self, file: str) -> dict:
         with open(file) as f:
             xml = f.read()
 
@@ -113,7 +113,7 @@ class Parser:
                     key = 'arrival'
                 elif t.get('TimingQualifierCode').__eq__('ALD'):
                     key = 'departure'
-                location_d[key] = {'time': self.str_to_datetime(t.find('Time').text, "%H:%M:%S.0000000%z").timetz()}
+                location_d[key] = {'time': self.str_to_datetime(t.find('Time').text, "%H:%M:%S.0000000%z")}
             location_d['Responsible'] = {'responsibleRU': None,
                                          'responsibleIM': None}
             try:
