@@ -1,0 +1,78 @@
+version: '3.9'
+
+services:
+
+    client:
+        build:
+            context: ./client
+            dockerfile: Dockerfile
+        container_name: client
+        stdin_open: true
+
+        ports:
+            - "3000:3000"
+        volumes:
+          - /app/node_modules
+          - ./client:/app
+        networks:
+          - frontend
+    server:
+        build:
+          context: ./server
+          dockerfile: Dockerfile
+        container_name: flask
+        image: digitalocean.com/flask-python:latest
+        restart: unless-stopped
+        ports:
+          - "5001:5001"
+        environment:
+          APP_ENV: "prod"
+          APP_DEBUG: "False"
+          APP_PORT: 5001
+          MONGODB_DATABASE: flaskdb
+          MONGODB_USERNAME: flaskuser
+          MONGODB_PASSWORD: your_mongodb_password
+          MONGODB_HOSTNAME: mongodb
+        volumes:
+          - appdata:/var/www
+        depends_on:
+          - mongodb
+        networks:
+          - frontend
+          - backend
+
+
+    mongodb:
+        image: mongo:latest
+        container_name: mongodb
+        restart: unless-stopped
+        command: mongod --auth
+        environment:
+          MONGO_INITDB_ROOT_USERNAME: mongodbuser
+          MONGO_INITDB_ROOT_PASSWORD: your_mongodb_root_password
+          MONGO_INITDB_DATABASE: flaskdb
+          MONGODB_DATA_DIR: /data/db
+          MONDODB_LOG_DIR: /dev/null
+        ports:
+          - "27017:27017"
+        volumes:
+          - mongodbdata:/data/db
+        networks:
+          - backend
+
+
+
+
+networks:
+  frontend:
+    driver: bridge
+  backend:
+    driver: bridge
+
+volumes:
+  mongodbdata:
+    driver: local
+  appdata:
+    driver: local
+  nginxdata:
+    driver: local

@@ -6,15 +6,21 @@ help:
 	@echo "make clean"
 	@echo "       cleans up cache files and venv"
 
-activate:
-	conda activate UPA2022
 
-create-env-from-yml:
-	conda env create -f environment.yml
+
+
+start:
+	cp requirements.txt ./server/
+	docker-compose up --build -d
+
+
+
 
 update:
-	conda env export > environment.yml
+	pip freeze > requirements.txt
+	cp requirements.txt ./server/
 
-download:
-	cd client && python3 main.py
+docker:
+	docker-compose rm -f
+	docker-compose up --build -d
 
