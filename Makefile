@@ -9,6 +9,12 @@ help:
 
 
 
+start:
+	cp requirements.txt ./server/
+	docker-compose up --build -d
+
+
+
 
 update:
 	pip freeze > requirements.txt
