@@ -1,9 +1,8 @@
-import datetime
+
 import logging
 
 import pymongo.database
 from glob import glob
-from db.MongoDB import MongoDB
 from Parser import Parser
 from MSG_TYPES_ENUM import MSGTYPE
 import os
@@ -151,13 +150,5 @@ class Queries:
             {'$match': {"cancellations": {'$eq': []}}},
         ])
 
-        for i in valid:
-            print(i['TRID'], i['reroutes'])
+        return valid
 
-
-if __name__ == "__main__":
-    mongo = MongoDB('test')
-    q = Queries(mongo.db)
-    q.select_valid_trains(dt.datetime(2022, 9, 12))
-    # q.delete_all()
-    # q.insert_all()
