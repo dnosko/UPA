@@ -62,7 +62,7 @@ class Queries:
         return collection.find({'calendar.startDate': {'$lte': date},
                                 'calendar.endDate': {'$gte': date}})
 
-    def find_valid_trains(self, date: dt.datetime):
+    def select_valid_trains(self, date: dt.datetime):
 
         valid = self.plannedTrains.aggregate([
             {
@@ -158,6 +158,6 @@ class Queries:
 if __name__ == "__main__":
     mongo = MongoDB('test')
     q = Queries(mongo.db)
-    q.find_valid_trains(dt.datetime(2022, 9, 12))
+    q.select_valid_trains(dt.datetime(2022, 9, 12))
     # q.delete_all()
     # q.insert_all()
