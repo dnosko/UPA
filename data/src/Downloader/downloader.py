@@ -23,6 +23,7 @@ def downloadGVZIP():
         name = GVD_2022_zip.split('/')[-1]
         if not os.path.exists(PATH_TO_SAVE+os.sep+name):
             wget.download(GVD_2022_zip,PATH_TO_SAVE+os.sep+name)
+
 def downloadAllZip():
 
     list_of_websites = []

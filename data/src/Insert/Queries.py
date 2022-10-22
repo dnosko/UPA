@@ -1,5 +1,4 @@
 import logging
-from db.MongoDB import MongoDB
 import pymongo.database
 from glob import glob
 import os
