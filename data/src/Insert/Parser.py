@@ -53,11 +53,8 @@ class Parser:
         obj = {}
         for child in identifiers_el:
             if child.tag == 'PlannedTransportIdentifiers':
-                if child[0].text == 'PA':
-                    obj['PAID'] = child.find('Core').text,
-                elif child[0].text == 'TR':
-                    obj['TRID'] = child.find('Core').text,
                 obj[child[0].text] = {
+                    'ID': child.find('Core').text,
                     'Company': child.find('Company').text,
                     'Variant': int(child.find('Variant').text),
                     'Year': int(child.find('TimetableYear').text)}

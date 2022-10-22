@@ -1,5 +1,6 @@
 import logging
 import pymongo.database
+import pymongo.errors
 from glob import glob
 import os
 import datetime as dt
@@ -24,8 +25,16 @@ class Queries:
             self.canceledTrains = db[self.canceled]
             self.rerouteTrains = db[self.reroute]
 
+    def create_indexes(self):
+        self.plannedTrains.create_index([("TR.ID", pymongo.DESCENDING)])
+        self.plannedTrains.create_index([("PA.ID", pymongo.DESCENDING)])
+        self.canceledTrains.create_index([("TR.ID", pymongo.DESCENDING)])
+        self.canceledTrains.create_index([("PA.ID", pymongo.DESCENDING)])
+        self.rerouteTrains.create_index([("TR.ID", pymongo.DESCENDING)])
+        self.rerouteTrains.create_index([("plannedID.ID", pymongo.DESCENDING)])
+
     def insert_all(self, folder: str = '../extract_data/'):
-        print( os.path.exists(folder))
+        print(os.path.exists(folder))
         for x in os.walk(folder):
             for y in glob(os.path.join(x[0], '*.xml')):
                 self.insert_obj(y)
@@ -71,11 +80,19 @@ class Queries:
 
     def find_trains(self, date: dt.datetime, from_location: str, to_location: str) -> list:
         valid_trains_collection = self.select_valid_trains(date)
-        found_trains_collection = self.select_by_location_from_to(valid_trains_collection, from_location, to_location)
+        found_trains_collection = self.select_by_location_from_to(valid_trains_collection, from_location,
+                                                                  to_location)
+        if found_trains_collection is None:
+            return None
         formated = self.format_to_output(found_trains_collection)
 
         self.db.drop_collection(valid_trains_collection)
         self.db.drop_collection(found_trains_collection)
+        print(len(formated))
+        for i in formated:
+            print(i['TRID'])
+            for a in i['path']:
+                print(a)
 
         return formated
 
@@ -104,13 +121,48 @@ class Queries:
             },
             {
                 '$lookup': {
+                    'from': self.reroute,
+                    "let": {"paid_r": '$plannedPAID.ID', 'trid_r': '$TR.ID', 'start': "$calendar.startDate",
+                        'end': '$calendar.endDate',
+                        'bitmap': '$calendar.bitmap',
+                        'bitIndex': {
+                            '$dateDiff': {'startDate': "$calendar.startDate", 'endDate': date, 'unit': 'day'}},
+                    },
+                    'pipeline': [
+                        {'$match': {'$expr':
+                                    {'$and': [
+                                        {'$eq':
+                                             ['$TR.ID', '$$trid_r']
+                                         }
+                                    ]}
+                        }},
+                        {'$match': {
+                            '$expr': {
+                                '$and': [
+                                    {'$lte': ['$$start', date]},
+                                    {'$gte': ['$$end', date]},
+                                    {'$eq':
+                                         [{'$substrBytes': ['$$bitmap', '$$bitIndex', 1]}, "1"]
+                                     },
+
+                                ]}
+                        }},
+                        {'$project': {'TRID': '$$trid_r', 'PAID': '$$paid_r'}}
+                    ],
+                    'as': 'reroutes'
+                }
+            },
+            {
+                '$lookup': {
                     'from': self.canceled,
                     'let': {
                         'start': "$calendar.startDate",
                         'end': '$calendar.endDate',
                         'bitmap': '$calendar.bitmap',
-                        'bitIndex': {'$dateDiff': {'startDate': "$calendar.startDate", 'endDate': date, 'unit': 'day'}},
-                        'trid_c': '$TRID',
+                        'bitIndex': {
+                            '$dateDiff': {'startDate': "$calendar.startDate", 'endDate': date, 'unit': 'day'}},
+                        'trid_c': '$TR.ID',
+                        'paid_c': '$PA.ID'
                     },
                     'pipeline': [
                         {'$match': {
@@ -122,50 +174,27 @@ class Queries:
                                          [{'$substrBytes': ['$$bitmap', '$$bitIndex', 1]}, "1"]
                                      },
                                     {'$eq':
-                                         ['$TRID', '$$trid_c']
+                                         ['$TR.ID', '$$trid_c']
+                                     },
+                                    {'$eq':
+                                         ['$PA.ID', '$$paid_c']
                                      }
                                 ],
                             },
                         },
                         },
-                        {'$project': {'TRID': '$$trid_c'}}
                     ],
                     'as': 'cancellations'
-                }},
-
-            {
-                '$lookup': {
-                    'from': self.reroute,
-                    'let': {
-                        'start': "$calendar.startDate",
-                        'end': '$calendar.endDate',
-                        'bitmap': '$calendar.bitmap',
-                        'bitIndex': {'$dateDiff': {'startDate': "$calendar.startDate", 'endDate': date, 'unit': 'day'}},
-                        'trid_r': '$TRID'
-                    },
-                    'pipeline': [
-                        {'$match': {
-                            '$expr': {
-                                '$and': [
-                                    {'$lte': ['$$start', date]},
-                                    {'$gte': ['$$end', date]},
-                                    {'$eq':
-                                         [{'$substrBytes': ['$$bitmap', '$$bitIndex', 1]}, "1"]
-                                     },
-                                    {'$eq':
-                                         ['$TRID', '$$trid_r']
-                                     }
-                                ]}
-                        },
-                        },
-                        {'$project': {'bitmap': "$$bitmap", 'start': '$$start', 'end': '$$end', 'index': '$$bitIndex'}}
-                    ],
-                    'as': 'reroutes'
                 }
             },
 
-            {'$match': {"reroutes": {'$eq': []}}},
-            {'$match': {"cancellations": {'$eq': []}}},
+            {'$match': {
+                '$and': [
+                    {'cancellations': {'$eq': []}},
+                    {'reroutes': {'$eq': []}}
+                ]
+            }
+            }
         ])
 
         valid_trains = self.db.create_collection('validTrains')
@@ -208,16 +237,20 @@ class Queries:
             },
         ])
 
-        trains_going_to_location = self.db.create_collection('goingToLocation')
-        trains_going_to_location.insert_many(filter_locations)
-        return trains_going_to_location
+        try:
+            trains_going_to_location = self.db.create_collection('goingToLocation')
+            trains_going_to_location.insert_many(filter_locations)
+            return trains_going_to_location
+        except pymongo.errors.InvalidOperation:
+            logging.error('No trains found!')
+            return None
 
     def format_to_output(self, collection) -> list:
 
         formated = collection.aggregate([{
             '$project': {
-                'TRID': '$TRID',
-                'PAID': '$PAID',
+                'TRID': '$TR.ID',
+                'PAID': '$PA.ID',
                 'path': {
                     '$map': {
                         'input': {
@@ -225,7 +258,7 @@ class Queries:
                                 'input': '$path',
                                 'as': 'location',
                                 'cond': {
-                                    '$in':['0001', '$$location.trainActivity']
+                                    '$in': ['0001', '$$location.trainActivity']
                                 }
                             }
                         },
@@ -242,4 +275,5 @@ class Queries:
         ])
 
         return list(formated)
+
 
