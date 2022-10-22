@@ -20,9 +20,9 @@ def downloadGVZIP():
     if not isExist:
         # Create a new directory because it does not exist
         os.makedirs(PATH_TO_SAVE)
-        name = GVD_2022_zip.split('/')[-1]
-        if not os.path.exists(PATH_TO_SAVE+os.sep+name):
-            wget.download(GVD_2022_zip,PATH_TO_SAVE+os.sep+name)
+    name = GVD_2022_zip.split('/')[-1]
+    if not os.path.exists(PATH_TO_SAVE+os.sep+name):
+        wget.download(GVD_2022_zip,PATH_TO_SAVE+os.sep+name)
 
 def downloadAllZip():
 
