@@ -115,7 +115,7 @@ class Parser:
                     key = 'arrival'
                 elif t.get('TimingQualifierCode').__eq__('ALD'):
                     key = 'departure'
-                location_d[key] = {'time': self.str_to_datetime(t.find('Time').text, "%H:%M:%S.0000000%z")}
+                location_d[key] = self.str_to_datetime(t.find('Time').text, "%H:%M:%S.0000000%z")
             location_d['Responsible'] = {'responsibleRU': None,
                                          'responsibleIM': None}
             try:
