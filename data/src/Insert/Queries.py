@@ -3,10 +3,11 @@ import logging
 
 import pymongo.database
 from glob import glob
-from Parser import Parser
-from MSG_TYPES_ENUM import MSGTYPE
 import os
 import datetime as dt
+
+from .MSG_TYPES_ENUM import MSGTYPE
+from .Parser import Parser
 
 
 class Queries:
@@ -25,6 +26,7 @@ class Queries:
             self.rerouteTrains = db[self.reroute]
 
     def insert_all(self, folder: str = '../extract_data/'):
+        print( os.path.exists(folder))
         for x in os.walk(folder):
             for y in glob(os.path.join(x[0], '*.xml')):
                 self.insert_obj(y)
