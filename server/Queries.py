@@ -1,4 +1,3 @@
-
 import logging
 from db.MongoDB import MongoDB
 import pymongo.database
@@ -61,6 +60,22 @@ class Queries:
     def filter_by_time(date: dt.datetime, collection):
         return collection.find({'calendar.startDate': {'$lte': date},
                                 'calendar.endDate': {'$gte': date}})
+
+    """ Returns list of distinct names of all locations in planned trains collection """
+
+    def select_all_locations_name(self) -> list:
+        locations = self.plannedTrains.distinct('path.name', {'path.trainActivity': '0001'})
+
+        return locations
+
+    def find_trains(self, date: dt.datetime, from_location: str, to_location: str):
+        valid_trains_collection = self.select_valid_trains(date)
+        found_trains_collection = self.select_by_location_from_to(valid_trains_collection, from_location, to_location)
+        formated = self.format_to_output(found_trains_collection)
+        for i in formated:
+            print(i)
+        self.db.drop_collection(valid_trains_collection)
+        self.db.drop_collection(found_trains_collection)
 
     def select_valid_trains(self, date: dt.datetime):
 
@@ -137,7 +152,7 @@ class Queries:
                                      },
                                     {'$eq':
                                          ['$TRID', '$$trid_r']
-                                    }
+                                     }
                                 ]}
                         },
                         },
@@ -151,30 +166,27 @@ class Queries:
             {'$match': {"cancellations": {'$eq': []}}},
         ])
 
-        self.valid_trains = self.db.create_collection('validTrains')
-        self.valid_trains.insert_many(valid)
+        valid_trains = self.db.create_collection('validTrains')
+        valid_trains.insert_many(valid)
 
-        return valid
+        return valid_trains
 
-    def select_by_location_from_to(self, from_location: str, to_location: str):
-        if from_location is None or to_location is None:
-            logging.error('Location must be specified')
-            return
+    def select_by_location_from_to(self, collection, from_location: str, to_location: str):
 
-        filter_locations = self.valid_trains.aggregate([
+        filter_locations = collection.aggregate([
             {'$match': {
-                    '$and': [
-                        {
-                            'path': { '$elemMatch': {
+                '$and': [
+                    {
+                        'path': {'$elemMatch': {
                             'name': from_location,
-                            'trainActivity': '0001',
+                            'trainActivity': '0001'
                         }}},
-                        { 'path': {'$elemMatch': {
-                            'name': to_location,
-                            'trainActivity': '0001',
-                        }}},
-                    ]
-                }
+                    {'path': {'$elemMatch': {
+                        'name': to_location,
+                        'trainActivity': '0001',
+                    }}},
+                ]
+            }
             },
             {
                 '$addFields': {
@@ -194,21 +206,51 @@ class Queries:
             },
         ])
 
-        return filter_locations
+        trains_going_to_location = self.db.create_collection('goingToLocation')
+        trains_going_to_location.insert_many(filter_locations)
+        return trains_going_to_location
 
-    def select_all_locations_name(self) -> list:
-        locations = self.plannedTrains.distinct('path.name', {'path.trainActivity': '0001'})
+    def format_to_output(self, collection) -> list:
 
-        return locations
+        formated = collection.aggregate([{
+            '$project': {
+                'TRID': '$TRID',
+                'PAID': '$PAID',
+                'path': {
+                    '$map': {
+                        'input': {
+                            '$filter': {
+                                'input': '$path',
+                                'as': 'location',
+                                'cond': {
+                                    '$in':['0001', '$$location.trainActivity']
+                                }
+                            }
+                        },
+                        'as': 'location',
+                        'in': {
+                            'name': '$$location.name',
+                            'arrival': '$$location.arrival',
+                            'departure': '$$location.departure'
+                        }
+                    }
+                }
+            }
+        }
+        ])
+
+        return list(formated)
+
 
 if __name__ == "__main__":
     mongo = MongoDB('test')
     q = Queries(mongo.db)
+    q.insert_all()
     mongo.db.drop_collection('validTrains')
-    #q.select_valid_trains(dt.datetime(2022, 10, 1))
-    #q.select_by_location_from_to( 'Břeclav', 'Valtice město')
-    q.select_all_locations_name()
-    # q.delete_all()
+    mongo.db.drop_collection('goingToLocation')
+    q.find_trains(dt.datetime(2022, 10, 1), 'Břeclav', 'Valtice město')
+    # valid_trains = q.select_valid_trains(dt.datetime(2022, 10, 1))
+    # q.select_by_location_from_to( valid_trains,'Břeclav', 'Valtice město')
+    # q.select_all_locations_name()
+    #q.delete_all()
     # q.insert_all()
-
-
