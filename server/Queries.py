@@ -68,14 +68,15 @@ class Queries:
 
         return locations
 
-    def find_trains(self, date: dt.datetime, from_location: str, to_location: str):
+    def find_trains(self, date: dt.datetime, from_location: str, to_location: str) -> list:
         valid_trains_collection = self.select_valid_trains(date)
         found_trains_collection = self.select_by_location_from_to(valid_trains_collection, from_location, to_location)
         formated = self.format_to_output(found_trains_collection)
-        for i in formated:
-            print(i)
+
         self.db.drop_collection(valid_trains_collection)
         self.db.drop_collection(found_trains_collection)
+
+        return formated
 
     def select_valid_trains(self, date: dt.datetime):
 
@@ -241,16 +242,3 @@ class Queries:
 
         return list(formated)
 
-
-if __name__ == "__main__":
-    mongo = MongoDB('test')
-    q = Queries(mongo.db)
-    q.insert_all()
-    mongo.db.drop_collection('validTrains')
-    mongo.db.drop_collection('goingToLocation')
-    q.find_trains(dt.datetime(2022, 10, 1), 'Břeclav', 'Valtice město')
-    # valid_trains = q.select_valid_trains(dt.datetime(2022, 10, 1))
-    # q.select_by_location_from_to( valid_trains,'Břeclav', 'Valtice město')
-    # q.select_all_locations_name()
-    #q.delete_all()
-    # q.insert_all()
