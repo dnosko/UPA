@@ -1,6 +1,6 @@
 
 import logging
-
+from db.MongoDB import MongoDB
 import pymongo.database
 from glob import glob
 from Parser import Parser
@@ -15,6 +15,7 @@ class Queries:
     reroute = 'rerouteTrains'
 
     def __init__(self, db):
+        self.db = db
         try:
             self.plannedTrains = db.create_collection(self.planned)
             self.canceledTrains = db.create_collection(self.canceled)
@@ -150,5 +151,69 @@ class Queries:
             {'$match': {"cancellations": {'$eq': []}}},
         ])
 
+        self.valid_trains = self.db.create_collection('validTrains')
+        self.valid_trains.insert_many(valid)
+
         return valid
+
+    def select_by_location_from_to(self, from_location: str, to_location: str):
+        if from_location is None or to_location is None:
+            logging.error('Location must be specified')
+            return
+
+        filter_locations = self.valid_trains.aggregate([
+            #{'index': {'$indexOfArray': ['path.name', from_location]}},
+            {'$match': {
+                    '$and': [
+                        {
+                            'path': { '$elemMatch': {
+                            'name': from_location,
+                            'trainActivity': '0001',
+                        }}},
+                        { 'path': {'$elemMatch': {
+                            'name': to_location,
+                            'trainActivity': '0001',
+                        }}},
+                    ]
+                }
+            },
+            {
+                '$addFields': {
+                    'isGoingTo': {'$let': {
+                        'vars': {
+                            'fromIndex': {'$indexOfArray': ['$path.name', from_location]},
+                            'toIndex': {'$indexOfArray': ['$path.name', to_location]}
+                        },
+                        'in': {'$gt': ['$$toIndex', '$$fromIndex']}
+                    }}
+                }
+            },
+            {
+                '$match': {
+                    'isGoingTo': True
+                }
+            }
+        ])
+        lst = list(filter_locations)
+        print(len(lst))
+        for i in lst:
+            for loc in i['path']:
+                print(loc)
+
+    def select_all_locations_name(self):
+        locations = self.plannedTrains.distinct('path.name', {'path.trainActivity': '0001'})
+        for i in locations:
+            print(i)
+        return locations
+
+if __name__ == "__main__":
+    mongo = MongoDB('test')
+    q = Queries(mongo.db)
+    mongo.db.drop_collection('validTrains')
+    q.select_valid_trains(dt.datetime(2022, 9, 19))
+    q.select_by_location_from_to('Praha hl. n.', 'Tábor')
+    #q.select_all_locations_name()
+    # q.delete_all()
+    # q.insert_all()
+
 
