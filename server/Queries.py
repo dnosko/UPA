@@ -162,7 +162,6 @@ class Queries:
             return
 
         filter_locations = self.valid_trains.aggregate([
-            #{'index': {'$indexOfArray': ['path.name', from_location]}},
             {'$match': {
                     '$and': [
                         {
@@ -190,29 +189,25 @@ class Queries:
             },
             {
                 '$match': {
-                    'isGoingTo': True
+                    'isGoingTo': True,
                 }
-            }
+            },
         ])
-        lst = list(filter_locations)
-        print(len(lst))
-        for i in lst:
-            for loc in i['path']:
-                print(loc)
 
-    def select_all_locations_name(self):
+        return filter_locations
+
+    def select_all_locations_name(self) -> list:
         locations = self.plannedTrains.distinct('path.name', {'path.trainActivity': '0001'})
-        for i in locations:
-            print(i)
+
         return locations
 
 if __name__ == "__main__":
     mongo = MongoDB('test')
     q = Queries(mongo.db)
     mongo.db.drop_collection('validTrains')
-    q.select_valid_trains(dt.datetime(2022, 9, 19))
-    q.select_by_location_from_to('Praha hl. n.', 'Tábor')
-    #q.select_all_locations_name()
+    #q.select_valid_trains(dt.datetime(2022, 10, 1))
+    #q.select_by_location_from_to( 'Břeclav', 'Valtice město')
+    q.select_all_locations_name()
     # q.delete_all()
     # q.insert_all()
 
