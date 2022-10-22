@@ -1,6 +1,5 @@
-
 import logging
-
+from db.MongoDB import MongoDB
 import pymongo.database
 from glob import glob
 from Parser import Parser
@@ -15,6 +14,7 @@ class Queries:
     reroute = 'rerouteTrains'
 
     def __init__(self, db):
+        self.db = db
         try:
             self.plannedTrains = db.create_collection(self.planned)
             self.canceledTrains = db.create_collection(self.canceled)
@@ -60,6 +60,23 @@ class Queries:
     def filter_by_time(date: dt.datetime, collection):
         return collection.find({'calendar.startDate': {'$lte': date},
                                 'calendar.endDate': {'$gte': date}})
+
+    """ Returns list of distinct names of all locations in planned trains collection """
+
+    def select_all_locations_name(self) -> list:
+        locations = self.plannedTrains.distinct('path.name', {'path.trainActivity': '0001'})
+
+        return locations
+
+    def find_trains(self, date: dt.datetime, from_location: str, to_location: str) -> list:
+        valid_trains_collection = self.select_valid_trains(date)
+        found_trains_collection = self.select_by_location_from_to(valid_trains_collection, from_location, to_location)
+        formated = self.format_to_output(found_trains_collection)
+
+        self.db.drop_collection(valid_trains_collection)
+        self.db.drop_collection(found_trains_collection)
+
+        return formated
 
     def select_valid_trains(self, date: dt.datetime):
 
@@ -136,7 +153,7 @@ class Queries:
                                      },
                                     {'$eq':
                                          ['$TRID', '$$trid_r']
-                                    }
+                                     }
                                 ]}
                         },
                         },
@@ -150,5 +167,78 @@ class Queries:
             {'$match': {"cancellations": {'$eq': []}}},
         ])
 
-        return valid
+        valid_trains = self.db.create_collection('validTrains')
+        valid_trains.insert_many(valid)
+
+        return valid_trains
+
+    def select_by_location_from_to(self, collection, from_location: str, to_location: str):
+
+        filter_locations = collection.aggregate([
+            {'$match': {
+                '$and': [
+                    {
+                        'path': {'$elemMatch': {
+                            'name': from_location,
+                            'trainActivity': '0001'
+                        }}},
+                    {'path': {'$elemMatch': {
+                        'name': to_location,
+                        'trainActivity': '0001',
+                    }}},
+                ]
+            }
+            },
+            {
+                '$addFields': {
+                    'isGoingTo': {'$let': {
+                        'vars': {
+                            'fromIndex': {'$indexOfArray': ['$path.name', from_location]},
+                            'toIndex': {'$indexOfArray': ['$path.name', to_location]}
+                        },
+                        'in': {'$gt': ['$$toIndex', '$$fromIndex']}
+                    }}
+                }
+            },
+            {
+                '$match': {
+                    'isGoingTo': True,
+                }
+            },
+        ])
+
+        trains_going_to_location = self.db.create_collection('goingToLocation')
+        trains_going_to_location.insert_many(filter_locations)
+        return trains_going_to_location
+
+    def format_to_output(self, collection) -> list:
+
+        formated = collection.aggregate([{
+            '$project': {
+                'TRID': '$TRID',
+                'PAID': '$PAID',
+                'path': {
+                    '$map': {
+                        'input': {
+                            '$filter': {
+                                'input': '$path',
+                                'as': 'location',
+                                'cond': {
+                                    '$in':['0001', '$$location.trainActivity']
+                                }
+                            }
+                        },
+                        'as': 'location',
+                        'in': {
+                            'name': '$$location.name',
+                            'arrival': '$$location.arrival',
+                            'departure': '$$location.departure'
+                        }
+                    }
+                }
+            }
+        }
+        ])
+
+        return list(formated)
 
