@@ -29,10 +29,7 @@ services:
           APP_ENV: "prod"
           APP_DEBUG: "False"
           APP_PORT: 5001
-          MONGODB_DATABASE: flaskdb
-          MONGODB_USERNAME: flaskuser
-          MONGODB_PASSWORD: your_mongodb_password
-          MONGODB_HOSTNAME: mongodb
+
         volumes:
           - appdata:/var/www
         depends_on:
@@ -46,7 +43,6 @@ services:
         image: mongo:latest
         container_name: mongodb
         restart: unless-stopped
-        command: mongod --auth
         environment:
           MONGO_INITDB_ROOT_USERNAME: mongodbuser
           MONGO_INITDB_ROOT_PASSWORD: your_mongodb_root_password

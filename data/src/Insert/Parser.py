@@ -1,7 +1,9 @@
 from typing import List
 from lxml import etree
 from datetime import datetime as dt
-from MSG_TYPES_ENUM import MSGTYPE
+
+from .MSG_TYPES_ENUM import MSGTYPE
+
 
 class Parser:
     CZPTTCISMessage = 'CZPTTCISMessage'
