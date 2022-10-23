@@ -29,9 +29,10 @@ def extract_files(directory: str = "download_data", pattern: str = '*.xml.zip') 
 
 def extract_files_from_caches(path_to_cache: str = "cache.json"):
     with open(path_to_cache, 'r') as f:
-        dict = json.load(f)
-
-    files = dict["downloaded"]
+        dictionary = json.load(f)
+    f.close()
+    files = dictionary["downloaded"]
+    extracted = []
     for file in files:
         dest_path = file.replace('download_data', 'extract_data')
         split_file_string = dest_path.split(os.sep)
@@ -46,19 +47,29 @@ def extract_files_from_caches(path_to_cache: str = "cache.json"):
             os.makedirs(dest)
 
         final_path = os.path.join(dest,file_name_dest)
-        print(file)
-        print(split_file_string)
-        print(dest)
+
 
         try:
             with gzip.open(file, 'rb') as f_in:
                 if not os.path.exists(f"{final_path}.xml"):
                     with open(f"{final_path}.xml", 'wb') as f_out:
                         shutil.copyfileobj(f_in, f_out)
+                        extracted.append(f"{final_path}.xml")
+
         except gzip.BadGzipFile:
             with zipfile.ZipFile(file, 'r') as f_in:
                 f_in.extractall(dest)
+                extracted.append(dest)
 
+    new_dict = {
+        'extracted': extracted,
+        "downloaded": list(files),
+    }
+
+    json_object = json.dumps(new_dict, indent=4)
+    # Writing to sample.json
+    with open(path_to_cache, "w") as outfile:
+        outfile.write(json_object)
 
 if __name__ == "__main__":
     extract_files()
