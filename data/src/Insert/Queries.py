@@ -97,10 +97,10 @@ class Queries:
 
 
     def drop_temporary_collections(self):
-        self.db.drop_collection(self.valid_trains)
-        self.db.drop_collection(self.trains_going_to_location)
-        self.db.drop_collection(self.reroute_trains_in_date)
-        self.db.drop_collection(self.canceled_trains_in_date)
+        self.db.drop_collection('validTrains')
+        self.db.drop_collection('goingToLocation')
+        self.db.drop_collection('canceledTrainsInDate')
+        self.db.drop_collection('rerouteTrainsInDate')
 
     def find_trains(self, date: dt.datetime, from_location: str, to_location: str) -> list:
         t = time.process_time()
