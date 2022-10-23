@@ -1,3 +1,4 @@
+import json
 import logging
 import pymongo.database
 from glob import glob
@@ -29,6 +30,18 @@ class Queries:
         for x in os.walk(folder):
             for y in glob(os.path.join(x[0], '*.xml')):
                 self.insert_obj(y)
+
+    def insert_by_cache(self, cache_path : str = "cache.json"):
+        with open(cache_path, 'r') as f:
+            dictionary = json.load(f)
+
+        files = dictionary["extracted"]
+        for file in files:
+            if file.endswith('.xml') and os.path.isfile(file):
+                self.insert_obj(file)
+
+
+
 
     def insert_obj(self, file: str):
         parser = Parser()
