@@ -85,13 +85,14 @@ def download():
         stack_n.append(Path_gvd)
 
     dictionary = {
+        "extracted": [],
         "downloaded": stack_n,
     }
-    print("Download object count")
-    print(len(stack_n))
+    print("Download object count", len(stack_n))
     # Serializing json
     json_object = json.dumps(dictionary, indent=4)
     # Writing to sample.json
     with open("cache.json", "w") as outfile:
         outfile.write(json_object)
+    outfile.close()
 
