@@ -1,10 +1,11 @@
 import json
 import logging
 import pymongo.database
+import pymongo.errors
 from glob import glob
 import os
 import datetime as dt
-
+import time
 from .MSG_TYPES_ENUM import MSGTYPE
 from .Parser import Parser
 
@@ -25,8 +26,13 @@ class Queries:
             self.canceledTrains = db[self.canceled]
             self.rerouteTrains = db[self.reroute]
 
+    def create_indexes(self):
+        self.plannedTrains.create_index([("TR.ID", pymongo.DESCENDING)])
+        self.canceledTrains.create_index([("TR.ID", pymongo.DESCENDING)])
+        self.rerouteTrains.create_index([("TR.ID", pymongo.DESCENDING)])
+
     def insert_all(self, folder: str = '../extract_data/'):
-        print( os.path.exists(folder))
+        print(os.path.exists(folder))
         for x in os.walk(folder):
             for y in glob(os.path.join(x[0], '*.xml')):
                 self.insert_obj(y)
@@ -82,17 +88,83 @@ class Queries:
 
         return locations
 
+
+    def create_temporary_collections(self):
+        self.canceled_trains_in_date = self.db.create_collection('canceledTrainsInDate')
+        self.reroute_trains_in_date = self.db.create_collection('rerouteTrainsInDate')
+        self.valid_trains = self.db.create_collection('validTrains')
+        self.trains_going_to_location = self.db.create_collection('goingToLocation')
+
+
+    def drop_temporary_collections(self):
+        self.db.drop_collection(self.valid_trains)
+        self.db.drop_collection(self.trains_going_to_location)
+        self.db.drop_collection(self.reroute_trains_in_date)
+        self.db.drop_collection(self.canceled_trains_in_date)
+
     def find_trains(self, date: dt.datetime, from_location: str, to_location: str) -> list:
-        valid_trains_collection = self.select_valid_trains(date)
-        found_trains_collection = self.select_by_location_from_to(valid_trains_collection, from_location, to_location)
-        formated = self.format_to_output(found_trains_collection)
+        t = time.process_time()
+        self.create_temporary_collections()
 
-        self.db.drop_collection(valid_trains_collection)
-        self.db.drop_collection(found_trains_collection)
+        self.filter_not_valid_trains_for_date(self.canceledTrains, self.canceled_trains_in_date, date)
 
+        self.filter_not_valid_trains_for_date(self.rerouteTrains, self.reroute_trains_in_date, date)
+
+        self.select_valid_trains(date, 'canceledTrainsInDate', 'rerouteTrainsInDate')
+
+        res = self.select_by_location_from_to(self.valid_trains, from_location,
+                                                                  to_location)
+        if res is None:
+            self.drop_temporary_collections()
+            return None
+
+        formated = self.format_to_output(self.trains_going_to_location)
+
+        self.drop_temporary_collections()
+        elapsed_time = time.process_time() - t
+        print(elapsed_time)
         return formated
 
-    def select_valid_trains(self, date: dt.datetime):
+
+    def filter_not_valid_trains_for_date(self, in_collection, out_collection, date: dt.datetime):
+        canceled = in_collection.aggregate([
+                {
+                    '$addFields': {
+                        'bit': {'$let': {
+                            'vars': {
+                                'bitIndex': {
+                                    '$dateDiff': {'startDate': "$calendar.startDate", 'endDate': date, 'unit': 'day'}},
+                            },
+                            'in': {'$substrBytes': ['$calendar.bitmap', '$$bitIndex', 1]}
+                        }}
+                    }
+                },
+                {
+                    '$match': {
+                        '$and': [
+                            {'calendar.startDate': {'$lte': date},
+                             'calendar.endDate': {'$gte': date},
+                             'bit': {'$eq': "1"}
+                             }]
+                    }
+                },
+            {'$sort': {'created': -1}},
+            {'$group': {
+                "_id": "$TR.ID", "latest": {
+                "$first": "$$ROOT"
+                } }
+            },
+            {
+                "$replaceWith": "$latest"
+            },
+            {'$project': {'TRID': '$TR.ID', 'PAID': '$PA.ID', 'created': '$created'} }
+        ])
+
+        out_collection.insert_many(canceled)
+        return out_collection
+
+
+    def select_valid_trains(self, date: dt.datetime, canceledTrains, rerouteTrains):
 
         valid = self.plannedTrains.aggregate([
             {
@@ -117,74 +189,36 @@ class Queries:
             },
             {
                 '$lookup': {
-                    'from': self.canceled,
-                    'let': {
-                        'start': "$calendar.startDate",
-                        'end': '$calendar.endDate',
-                        'bitmap': '$calendar.bitmap',
-                        'bitIndex': {'$dateDiff': {'startDate': "$calendar.startDate", 'endDate': date, 'unit': 'day'}},
-                        'trid_c': '$TRID',
-                    },
-                    'pipeline': [
-                        {'$match': {
-                            '$expr': {
-                                '$and': [
-                                    {'$lte': ['$$start', date]},
-                                    {'$gte': ['$$end', date]},
-                                    {'$eq':
-                                         [{'$substrBytes': ['$$bitmap', '$$bitIndex', 1]}, "1"]
-                                     },
-                                    {'$eq':
-                                         ['$TRID', '$$trid_c']
-                                     }
-                                ],
-                            },
-                        },
-                        },
-                        {'$project': {'TRID': '$$trid_c'}}
-                    ],
+                    'from': canceledTrains,
+                    'localField': 'TR.ID',
+                    'foreignField': 'TRID',
                     'as': 'cancellations'
-                }},
-
-            {
-                '$lookup': {
-                    'from': self.reroute,
-                    'let': {
-                        'start': "$calendar.startDate",
-                        'end': '$calendar.endDate',
-                        'bitmap': '$calendar.bitmap',
-                        'bitIndex': {'$dateDiff': {'startDate': "$calendar.startDate", 'endDate': date, 'unit': 'day'}},
-                        'trid_r': '$TRID'
-                    },
-                    'pipeline': [
-                        {'$match': {
-                            '$expr': {
-                                '$and': [
-                                    {'$lte': ['$$start', date]},
-                                    {'$gte': ['$$end', date]},
-                                    {'$eq':
-                                         [{'$substrBytes': ['$$bitmap', '$$bitIndex', 1]}, "1"]
-                                     },
-                                    {'$eq':
-                                         ['$TRID', '$$trid_r']
-                                     }
-                                ]}
-                        },
-                        },
-                        {'$project': {'bitmap': "$$bitmap", 'start': '$$start', 'end': '$$end', 'index': '$$bitIndex'}}
-                    ],
-                    'as': 'reroutes'
                 }
             },
+            {
+                '$lookup': {
+                    'from': rerouteTrains,
+                    'localField': 'TR.ID',
+                    'foreignField': 'TRID',
+                    'as': 'reroutes'
+                }
 
-            {'$match': {"reroutes": {'$eq': []}}},
-            {'$match': {"cancellations": {'$eq': []}}},
+            },
+
+
+            {'$match': {
+                '$and': [
+                   {'cancellations': {'$eq': []}},
+                    {'reroutes': {'$eq': []}}
+                ]
+            }
+            }
         ])
 
-        valid_trains = self.db.create_collection('validTrains')
-        valid_trains.insert_many(valid)
 
-        return valid_trains
+        self.valid_trains.insert_many(valid)
+
+
 
     def select_by_location_from_to(self, collection, from_location: str, to_location: str):
 
@@ -221,16 +255,20 @@ class Queries:
             },
         ])
 
-        trains_going_to_location = self.db.create_collection('goingToLocation')
-        trains_going_to_location.insert_many(filter_locations)
-        return trains_going_to_location
+
+        try:
+            self.trains_going_to_location.insert_many(filter_locations)
+            return True
+        except pymongo.errors.InvalidOperation:
+            logging.error('No trains found!')
+            return None
 
     def format_to_output(self, collection) -> list:
 
         formated = collection.aggregate([{
             '$project': {
-                'TRID': '$TRID',
-                'PAID': '$PAID',
+                'TRID': '$TR.ID',
+                'PAID': '$PA.ID',
                 'path': {
                     '$map': {
                         'input': {
@@ -238,7 +276,7 @@ class Queries:
                                 'input': '$path',
                                 'as': 'location',
                                 'cond': {
-                                    '$in':['0001', '$$location.trainActivity']
+                                    '$in': ['0001', '$$location.trainActivity']
                                 }
                             }
                         },
@@ -255,4 +293,5 @@ class Queries:
         ])
 
         return list(formated)
+
 
