@@ -35,6 +35,7 @@ class Parser:
         information = root.find('CZPTTInformation')
         msg['path'] = self.parse_locations(information)
         msg['calendar'] = self.parse_calendar(information)
+        msg['header'] = self.parse_header(root)
         msg['networkSpecificParameters'] = self.network_specific_parameters(root)
 
         return msg
@@ -78,13 +79,26 @@ class Parser:
         calendar_d['endDate'] = self.str_to_datetime(calendar[1].find('EndDateTime').text)
         return calendar_d
 
-    def network_specific_parameters(self, root) -> List:
+    def network_specific_parameters(self, root) -> list:
         network_params = root.findall('NetworkSpecificParameter')
         params = []
         for param in network_params:
             params.append(etree.tostring(param))
 
         return params
+
+    @staticmethod
+    def parse_header(root) -> list:
+        header = root.find('CZPTTHeader')
+        params = []
+        if header is None:
+            return params
+        for param in header:
+            params.append(etree.tostring(param))
+
+        return params
+
+
 
     def parse_location(self, parent) -> dict:
         location = parent.findall('Location')
