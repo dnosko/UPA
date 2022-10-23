@@ -4,7 +4,7 @@ import pymongo.errors
 from glob import glob
 import os
 import datetime as dt
-
+import time
 from .MSG_TYPES_ENUM import MSGTYPE
 from .Parser import Parser
 
@@ -84,13 +84,13 @@ class Queries:
 
 
     def drop_temporary_collections(self):
-        self.db.drop_collection(self.valid_trains_collection)
-        self.db.drop_collection(self.found_trains_collection)
+        self.db.drop_collection(self.valid_trains)
+        self.db.drop_collection(self.trains_going_to_location)
         self.db.drop_collection(self.reroute_trains_in_date)
         self.db.drop_collection(self.canceled_trains_in_date)
 
     def find_trains(self, date: dt.datetime, from_location: str, to_location: str) -> list:
-
+        t = time.process_time()
         self.create_temporary_collections()
 
         self.filter_not_valid_trains_for_date(self.canceledTrains, self.canceled_trains_in_date, date)
@@ -99,16 +99,17 @@ class Queries:
 
         self.select_valid_trains(date, 'canceledTrainsInDate', 'rerouteTrainsInDate')
 
-        res = self.select_by_location_from_to(self.valid_trains_collection, from_location,
+        res = self.select_by_location_from_to(self.valid_trains, from_location,
                                                                   to_location)
         if res is None:
             self.drop_temporary_collections()
             return None
 
-        formated = self.format_to_output(self.found_trains_collection)
+        formated = self.format_to_output(self.trains_going_to_location)
 
         self.drop_temporary_collections()
-
+        elapsed_time = time.process_time() - t
+        print(elapsed_time)
         return formated
 
 
