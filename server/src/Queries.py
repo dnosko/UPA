@@ -241,6 +241,7 @@ class Queries:
 
         formated = collection.aggregate([{
             '$project': {
+                '_id': 0,
                 'TRID': '$TR.ID',
                 'PAID': '$PA.ID',
                 'path': {
