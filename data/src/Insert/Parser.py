@@ -1,6 +1,7 @@
 from typing import List
 from lxml import etree
 from datetime import datetime as dt
+from datetime import timedelta
 
 from .MSG_TYPES_ENUM import MSGTYPE
 
@@ -129,7 +130,9 @@ class Parser:
                     key = 'arrival'
                 elif t.get('TimingQualifierCode').__eq__('ALD'):
                     key = 'departure'
-                location_d[key] = self.str_to_datetime(t.find('Time').text, "%H:%M:%S.0000000%z")
+                location_d['offset'] = int(t.find('Offset').text)
+                time = self.str_to_datetime(t.find('Time').text, "%H:%M:%S.0000000%z") + timedelta(days=location_d['offset'])
+                location_d[key] = time
             location_d['Responsible'] = {'responsibleRU': None,
                                          'responsibleIM': None}
             try:
