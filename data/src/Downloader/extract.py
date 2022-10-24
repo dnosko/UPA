@@ -58,8 +58,19 @@ def extract_files_from_caches(path_to_cache: str = "cache.json"):
 
         except gzip.BadGzipFile:
             with zipfile.ZipFile(file, 'r') as f_in:
-                f_in.extractall(dest)
-                extracted.append(dest)
+                if file_name == 'GVD2022.zip':
+                    gvd_files = f_in.namelist()
+                    path = os.path.join(dest, 'GVD2022')
+                    os.makedirs(path)
+                    f_in.extractall(path)
+                    for gvd in gvd_files:
+                        dest = os.path.join(path, gvd)
+                        extracted.append(dest)
+                else:
+                    f_in.extractall(dest)
+                    f_name = f_in.namelist()[0]
+                    file_path = os.path.join(dest, f_name)
+                    extracted.append(file_path)
 
     new_dict = {
         'extracted': extracted,
