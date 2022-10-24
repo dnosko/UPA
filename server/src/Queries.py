@@ -257,8 +257,8 @@ class Queries:
                         'as': 'location',
                         'in': {
                             'name': '$$location.name',
-                            'arrival': '$$location.arrival',
-                            'departure': '$$location.departure'
+                            'arrival': {'$dateToString': { 'format': "%H:%M:%S", 'date': "$$location.arrival" }},
+                            'departure': {'$dateToString': { 'format': "%H:%M:%S", 'date': "$$location.departure" }},
                         }
                     }
                 }
