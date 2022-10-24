@@ -31,8 +31,7 @@ class Queries:
         self.canceledTrains.create_index([("TR.ID", pymongo.DESCENDING)])
         self.rerouteTrains.create_index([("TR.ID", pymongo.DESCENDING)])
 
-    def insert_all(self, folder: str = '../extract_data/'):
-        print(os.path.exists(folder))
+    def insert_all(self, folder: str = 'extract_data/'):
         for x in os.walk(folder):
             for y in glob(os.path.join(x[0], '*.xml')):
                 self.insert_obj(y)
@@ -46,27 +45,21 @@ class Queries:
             if file.endswith('.xml') and os.path.isfile(file):
                 self.insert_obj(file)
 
-
-
-
     def insert_obj(self, file: str):
         parser = Parser()
+        if parser is None:
+            return
         parsed_obj = parser.parse_file(file)
         if parser.msg_type == MSGTYPE.PLANNED:
-            self.insert_planned(parsed_obj)
+            self.insert(self.plannedTrains, parsed_obj)
         elif parser.msg_type == MSGTYPE.CANCELED:
-            self.insert_canceled(parsed_obj)
+            self.insert(self.canceledTrains, parsed_obj)
         elif parser.msg_type == MSGTYPE.REROUTE:
-            self.insert_reroute(parsed_obj)
+            self.insert(self.rerouteTrains, parsed_obj)
 
-    def insert_planned(self, obj: dict):
-        self.plannedTrains.insert_one(obj)
-
-    def insert_canceled(self, obj: dict):
-        self.canceledTrains.insert_one(obj)
-
-    def insert_reroute(self, obj: dict):
-        self.rerouteTrains.insert_one(obj)
+    @staticmethod
+    def insert(collection, obj: dict):
+        collection.replace_one({'TR': obj['TR'], 'PA': obj['PA']},obj, upsert=True)
 
     def delete_all(self):
         if not self.plannedTrains.delete_many({}):
@@ -118,8 +111,8 @@ class Queries:
             self.drop_temporary_collections()
             return None
 
-        formated = self.format_to_output(self.trains_going_to_location)
 
+        formated = self.format_to_output(self.trains_going_to_location)
         self.drop_temporary_collections()
         elapsed_time = time.process_time() - t
         print(elapsed_time)
@@ -254,6 +247,11 @@ class Queries:
                 }
             },
         ])
+
+        #for i in list(filter_locations):
+        #    print(i['TR'])
+        #    for a in i['path']:
+        #       print(a['name'])
 
 
         try:

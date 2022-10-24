@@ -2,7 +2,7 @@ from src.Downloader.downloader import download
 from src.Downloader.extract import extract_files,extract_files_from_caches
 from src.Insert.db.MongoDB import MongoDB, MongoClient
 from src.Insert.Queries import Queries
-
+from config import CACHE_INSERT
 def main():
 
     MONGO_HOST = 'localhost'
@@ -17,11 +17,11 @@ def main():
     queries = Queries(db.db)
     download()
     extract_files_from_caches()
-    queries.insert_by_cache()
 
-
-
-
+    if CACHE_INSERT:
+        queries.insert_by_cache()
+    else:
+        queries.insert_all()
 
 
 if __name__ == "__main__":
