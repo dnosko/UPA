@@ -14,7 +14,10 @@ class Parser:
 
     def parse_file(self, file: str) -> dict:
         with open(file) as f:
-            xml = f.read()
+            try:
+                xml = f.read()
+            except etree.XMLSyntaxError:
+                return None
 
         root = etree.fromstring(xml)
 
