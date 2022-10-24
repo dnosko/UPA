@@ -21,7 +21,7 @@ services:
           context: ./server
           dockerfile: Dockerfile
         container_name: flask
-        image: digitalocean.com/flask-python:latest
+        image: 3.9.15-alpine3.15
         restart: unless-stopped
         ports:
           - "5001:5001"
@@ -29,7 +29,10 @@ services:
           APP_ENV: "prod"
           APP_DEBUG: "False"
           APP_PORT: 5001
-
+          MONGODB_DATABASE: db
+          MONGODB_USERNAME: mongodbuser
+          MONGODB_PASSWORD: your_mongodb_root_password
+          MONGODB_HOSTNAME: mongodb
         volumes:
           - appdata:/var/www
         depends_on:
@@ -46,7 +49,7 @@ services:
         environment:
           MONGO_INITDB_ROOT_USERNAME: mongodbuser
           MONGO_INITDB_ROOT_PASSWORD: your_mongodb_root_password
-          MONGO_INITDB_DATABASE: flaskdb
+          MONGO_INITDB_DATABASE: db
           MONGODB_DATA_DIR: /data/db
           MONDODB_LOG_DIR: /dev/null
         ports:
