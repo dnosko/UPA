@@ -6,6 +6,10 @@ from glob import glob
 import os
 import datetime as dt
 import time
+
+from bson import json_util
+from flask import jsonify
+
 from .MSG_TYPES_ENUM import MSGTYPE
 from .Parser import Parser
 
@@ -96,6 +100,7 @@ class Queries:
             self.db.drop_collection('rerouteTrainsInDate')
         except pymongo.errors.CollectionInvalid:
             return
+
 
     def find_trains(self, date: dt.datetime, from_location: str, to_location: str) -> list:
         t = time.process_time()
@@ -266,6 +271,7 @@ class Queries:
 
         formated = collection.aggregate([{
             '$project': {
+                '_id': 0,
                 'TRID': '$TR.ID',
                 'PAID': '$PA.ID',
                 'path': {
@@ -282,8 +288,8 @@ class Queries:
                         'as': 'location',
                         'in': {
                             'name': '$$location.name',
-                            'arrival': '$$location.arrival',
-                            'departure': '$$location.departure'
+                            'arrival': {'$dateToString': { 'format': "%H:%M:%S", 'date': "$$location.arrival" }},
+                            'departure': {'$dateToString': { 'format': "%H:%M:%S", 'date': "$$location.departure" }},
                         }
                     }
                 }
