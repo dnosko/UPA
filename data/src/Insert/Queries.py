@@ -125,6 +125,8 @@ class Queries:
 
 
         formated = self.format_to_output(self.trains_going_to_location)
+        for i in formated:
+            print(i)
         self.drop_temporary_collections()
         elapsed_time = time.process_time() - t
         print(elapsed_time)
@@ -269,7 +271,11 @@ class Queries:
 
     def format_to_output(self, collection) -> list:
 
-        formated = collection.aggregate([{
+        formated = collection.aggregate([
+            {
+                '$sort': {'path.0.departure': 1},
+            },
+            {
             '$project': {
                 '_id': 0,
                 'TRID': '$TR.ID',
