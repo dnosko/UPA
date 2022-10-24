@@ -248,12 +248,6 @@ class Queries:
             },
         ])
 
-        #for i in list(filter_locations):
-        #    print(i['TR'])
-        #    for a in i['path']:
-        #       print(a['name'])
-
-
         try:
             self.trains_going_to_location.insert_many(filter_locations)
             return True
