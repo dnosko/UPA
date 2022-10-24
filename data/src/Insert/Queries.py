@@ -83,33 +83,40 @@ class Queries:
 
 
     def create_temporary_collections(self):
-        self.canceled_trains_in_date = self.db.create_collection('canceledTrainsInDate')
-        self.reroute_trains_in_date = self.db.create_collection('rerouteTrainsInDate')
-        self.valid_trains = self.db.create_collection('validTrains')
-        self.trains_going_to_location = self.db.create_collection('goingToLocation')
-
+            self.canceled_trains_in_date = self.db.create_collection('canceledTrainsInDate')
+            self.reroute_trains_in_date = self.db.create_collection('rerouteTrainsInDate')
+            self.valid_trains = self.db.create_collection('validTrains')
+            self.trains_going_to_location = self.db.create_collection('goingToLocation')
 
     def drop_temporary_collections(self):
-        self.db.drop_collection('validTrains')
-        self.db.drop_collection('goingToLocation')
-        self.db.drop_collection('canceledTrainsInDate')
-        self.db.drop_collection('rerouteTrainsInDate')
+        try:
+            self.db.drop_collection('validTrains')
+            self.db.drop_collection('goingToLocation')
+            self.db.drop_collection('canceledTrainsInDate')
+            self.db.drop_collection('rerouteTrainsInDate')
+        except pymongo.errors.CollectionInvalid:
+            return
 
     def find_trains(self, date: dt.datetime, from_location: str, to_location: str) -> list:
         t = time.process_time()
+        self.drop_temporary_collections()
         self.create_temporary_collections()
+        try:
+            self.filter_not_valid_trains_for_date(self.canceledTrains, self.canceled_trains_in_date, date)
 
-        self.filter_not_valid_trains_for_date(self.canceledTrains, self.canceled_trains_in_date, date)
+            self.filter_not_valid_trains_for_date(self.rerouteTrains, self.reroute_trains_in_date, date)
 
-        self.filter_not_valid_trains_for_date(self.rerouteTrains, self.reroute_trains_in_date, date)
+            self.select_valid_trains(date, 'canceledTrainsInDate', 'rerouteTrainsInDate')
 
-        self.select_valid_trains(date, 'canceledTrainsInDate', 'rerouteTrainsInDate')
+            res = self.select_by_location_from_to(self.valid_trains, from_location,
+                                                                      to_location)
+        except pymongo.errors.InvalidOperation:
+            self.drop_temporary_collections()
+            return []
 
-        res = self.select_by_location_from_to(self.valid_trains, from_location,
-                                                                  to_location)
         if res is None:
             self.drop_temporary_collections()
-            return None
+            return []
 
 
         formated = self.format_to_output(self.trains_going_to_location)
