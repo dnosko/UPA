@@ -14,12 +14,12 @@ class Parser:
 
     def parse_file(self, file: str) -> dict:
         with open(file) as f:
-            try:
-                xml = f.read()
-            except etree.XMLSyntaxError:
-                return None
+            xml = f.read()
 
-        root = etree.fromstring(xml)
+        try:
+            root = etree.fromstring(xml)
+        except etree.XMLSyntaxError:
+            return None
 
         if root.tag == self.CZCanceledMessage:
             self.msg_type = MSGTYPE.CANCELED
