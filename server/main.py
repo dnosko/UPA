@@ -1,48 +1,45 @@
+from datetime import datetime
 import os
 from flask import Flask, request, jsonify
-from flask_pymongo import PyMongo
+from pymongo import MongoClient
+
+from src.Queries import Queries
 
 application = Flask(__name__)
+MONGO_HOST = 'mongodb'
+MONGO_PORT = "27017"
+MONGO_DB = "flaskdb"
+MONGO_USER = "mongodbuser"
+MONGO_PASS = "your_mongodb_root_password"
 
+uri = "mongodb://{}:{}@{}:{}/{}?authSource=admin".format(MONGO_USER, MONGO_PASS, MONGO_HOST, MONGO_PORT, MONGO_DB)
 
+db = MongoClient(uri)
+queries = Queries(db.db)
 
-@application.route('/')
+@application.route('/',)
 def index():
-    return jsonify(
-        status=True,
-        message='Welcome to the Dockerized Flask MongoDB app!'
-    )
+    return jsonify(message='Hello world ')
 
-@application.route('/todo')
-def todo():
-    _todos = db.todo.find()
 
-    item = {}
-    data = []
-    for todo in _todos:
-        item = {
-            'id': str(todo['_id']),
-            'todo': todo['todo']
-        }
-        data.append(item)
+@application.route('/locations')
+def locations():
+    return jsonify(locations=queries.select_all_locations_name())
 
-    return jsonify(
-        status=True,
-        data=data
-    )
-
-@application.route('/todo', methods=['POST'])
+@application.route('/path', methods=['GET', 'POST'])
 def createTodo():
-    data = request.get_json(force=True)
-    item = {
-        'todo': data['todo']
-    }
-    db.todo.insert_one(item)
+    date = request.args.get('date')
+    from_location = request.args.get('from')
+    to_location = request.args.get('to')
+    print(date)
+    date_object = datetime.strptime(date, '%m/%d/%y_%H:%M:%S')
+    #09/19/18 13:55:26
+    return jsonify(paths=queries.find_trains(date_object, from_location, to_location))
 
-    return jsonify(
-        status=True,
-        message='To-do saved successfully!'
-    ), 201
+
+
+
+
 
 if __name__ == "__main__":
     ENVIRONMENT_DEBUG = os.environ.get("APP_DEBUG", True)

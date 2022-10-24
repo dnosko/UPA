@@ -15,6 +15,9 @@ start:
 
 
 
+removeData:
+	cd data && rm -rf download_data && rm -rf extract_data && rm -rf cache.json
+
 
 update:
 	pip freeze > requirements.txt
