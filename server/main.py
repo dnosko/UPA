@@ -3,8 +3,6 @@ import os
 from flask import Flask, request, jsonify
 from pymongo import MongoClient
 from flask_cors import CORS, cross_origin
-
-
 from src.Queries import Queries
 
 application = Flask(__name__)
@@ -36,10 +34,7 @@ def locations():
 
 @application.route('/path', methods=['GET','POST'])
 @cross_origin()
-def createTodo():
-    #date = request.args.get('date')
-    #from_location = request.args.get('from')
-    #to_location = request.args.get('to')
+def path():
     data = request.get_json()
     date = data['date']
     from_location= data['from']
