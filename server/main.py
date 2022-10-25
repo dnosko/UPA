@@ -2,10 +2,16 @@ from datetime import datetime
 import os
 from flask import Flask, request, jsonify
 from pymongo import MongoClient
+from flask_cors import CORS, cross_origin
+
 
 from src.Queries import Queries
 
 application = Flask(__name__)
+cors = CORS(application)
+application.config["CORS_HEADERS"] = "Content-Type"
+
+
 MONGO_HOST = 'mongodb'
 MONGO_PORT = "27017"
 MONGO_DB = "flaskdb"
@@ -18,23 +24,28 @@ db = MongoClient(uri)
 queries = Queries(db.db)
 
 @application.route('/',)
+@cross_origin()
 def index():
     return jsonify(message='Hello world ')
 
 
 @application.route('/locations')
+@cross_origin()
 def locations():
     return jsonify(locations=queries.select_all_locations_name())
 
-@application.route('/path', methods=['GET', 'POST'])
+@application.route('/path', methods=['GET','POST'])
+@cross_origin()
 def createTodo():
-    date = request.args.get('date')
-    from_location = request.args.get('from')
-    to_location = request.args.get('to')
-    print(date)
-    date_object = datetime.strptime(date, '%m/%d/%y_%H:%M:%S')
-    #09/19/18 13:55:26
-    return jsonify(paths=queries.find_trains(date_object, from_location, to_location))
+    #date = request.args.get('date')
+    #from_location = request.args.get('from')
+    #to_location = request.args.get('to')
+    data = request.get_json()
+    date = data['date']
+    from_location= data['from']
+    to_location = data['to']
+    date_object = datetime.strptime(date, '%Y-%m-%d %H:%M:%S')
+    return jsonify(paths=list(queries.find_trains(date_object, from_location, to_location)))
 
 
 
