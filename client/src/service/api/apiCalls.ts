@@ -13,13 +13,6 @@ const instance = axios.create({
 });
 
 
-interface interfaceLocations {
-    setLoading: (value: boolean) => void,
-    setError: (value: boolean) => void,
-    setSuccess: (value: boolean) => void,
-    setResponse: (value: string[]) => void
-
-}
 
 
 export const getLocations = async (setLoading: { (value: SetStateAction<boolean>): void; (arg0: boolean): void; }, setError: { (value: SetStateAction<boolean>): void; (arg0: boolean): void; }, setSuccess: { (value: SetStateAction<boolean>): void; (arg0: boolean): void; }, setResponse: { (value: SetStateAction<string[]>): void; (arg0: any): void; }) => {

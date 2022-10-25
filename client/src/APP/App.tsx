@@ -212,7 +212,7 @@ function App() {
 
                       ))}
 
-                  {!errorForm && !loadingPaths && succesPaths && paths.length  == 0 && (
+                  {!errorForm && !loadingPaths && succesPaths && paths.length  === 0 && (
                       <Text type="danger">Bolo najdenych 0 spojov</Text>
                   )}
 
