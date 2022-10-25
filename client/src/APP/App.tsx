@@ -1,171 +1,231 @@
-import React from 'react';
-import { Input } from 'antd';
+import React, {useEffect, useState} from 'react';
+import { Space, Spin, Typography, Select } from 'antd';
+
 import './App.css';
-import {Table, Tag } from 'antd';
+import {Table, Row} from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { Button } from 'antd';
 import "antd/dist/antd.css";
 import { DatePicker } from 'antd';
 import type { DatePickerProps } from 'antd/es/date-picker';
+import {getLocations, postPath} from "../service/api/apiCalls";
 
 
-interface DataType {
-  odkud: string;
-  kam: string;
-  age: number;
-  kdy_odjezd: string;
-  kdy_prijezd: string;
-  kraj: string;
-  tags: string[];
+
+
+interface travelPath {
+  "arrival": string,
+  "departure": string,
+  "name": string
 }
 
-// idk co chceme zobrazovat este, takže toto kludne všetko možme zeditovať
-const columns: ColumnsType<DataType> = [
+interface travelType {
+  "PAID": string,
+  "TRID": string,
+  "path": travelPath[]
+
+}
+
+const columns: ColumnsType<travelPath> = [
   {
-    title: 'Odkud',
-    dataIndex: 'odkud',
-    key: 'odkud',
-    render: text => <a href={"./"}>{text}</a>,
+    title: 'Prichod',
+    dataIndex: 'arrival',
+    key: 'arrival',
   },
   {
-    title: 'Kam',
-    dataIndex: 'kam',
-    key: 'kam',
+    title: 'Odchod',
+    dataIndex: 'departure',
+    key: 'departure',
   },
   {
-    title: 'Odjezd',
-    dataIndex: 'kdy_odjezd',
-    key: 'kdy_odjezd',
+    title: 'Stanice',
+    dataIndex: 'name',
+    key: 'name',
   },
-  {
-    title: 'Prijezd',
-    dataIndex: 'kdy_prijezd',
-    key: 'kdy_prijezd',
-  },
-  {
-    title: 'Kraj',
-    dataIndex: 'kraj',
-    key: 'kraj',
-  },
-  {
-    title: 'Tags',
-    key: 'tags',
-    dataIndex: 'tags',
-    render: (_, { tags }) => (
-      <>
-        {tags.map(tag => {
-          let color = tag.length > 5 ? 'geekblue' : 'green';
-          if (tag === 'loser') {
-            color = 'volcano';
-          }
-          return (
-            <Tag color={color} key={tag}>
-              {tag.toUpperCase()}
-            </Tag>
-          );
-        })}
-      </>
-    ),
-    }
 ];
 
-const data: DataType[] = [
-  {
-    odkud: 'Jihlava',
-    kam: 'John Brown',
-    age: 32,
-    kdy_odjezd: '09:00:00',
-    kdy_prijezd: '09:32:00',
-    kraj: 'Vysočina',
-    tags: ['asik toto', 'zmažeme'],
-  },
-  {
-    odkud: 'Brno',
-    kam: 'Praha',
-    age: 42,
-    kdy_odjezd: '09:30:00',
-    kdy_prijezd: '09:54:00',
-    kraj: 'Jihočeský kraj',
-    tags: ['loser'],
-  },
-  {
-    odkud: 'Královec',
-    kam: 'Ostrava',
-    age: 32,
-    kdy_odjezd: '10:00:00',
-    kdy_prijezd: '10:44:00',
-    kraj: 'Baník pyčo',
-    tags: ['cool', 'teacher'],
-  },
-  {
-    odkud: 'Královec',
-    kam: 'Ostrava',
-    age: 32,
-    kdy_odjezd: '11:00:00',
-    kdy_prijezd: '12:44:00',
-    kraj: 'Jihomoravský',
-    tags: ['fuckoff', 'bitch'],
-  },
-];
+
 
 
 function App() {
   // sets the destination and departure location
+  const { Text } = Typography;
+  const { Option } = Select;
+
+  // ---- first load for trains
+  const [stations,setStations] = useState<string[]>([]);
+  const [loadingPage, setLoadingPage] = useState<boolean>(false);
+  const [errorPage,setErrorPage] = useState<boolean>(false);
+  const [succesPage, setSuccesPage] = useState<boolean>(false);
+  // ---- first load for trains
+
+  // ---- result of search
+  const [paths,setPaths] = useState<travelType[]>([]);
+  const [loadingPaths, setLoadingPaths] = useState<boolean>(false);
+  const [errorPaths,setErrorPaths] = useState<boolean>(false);
+  const [succesPaths, setSuccesPaths] = useState<boolean>(false);
+  // ---- result of search
+
+  const [from,setFrom] = useState<string|undefined>(undefined);
+  const [to,setTo] = useState<string|undefined>(undefined);
+  const [date,setDate]= useState<string|undefined>(undefined);
 
 
+  const [errorForm, setErrorForm] = useState<boolean>(false);
 
-  const [formInputData, setFormInputData] = React.useState({
-    odkud: '',
-    kam: '',
-  })
 
-  // sets the date to be searched in the timetables
-  const [formDateData, setFormDateData] = React.useState({
-    datum: '',
-  })
-
-  // when user types into text inputs, store the change
-  const onInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormInputData({ ...formInputData, [e.target.name]: e.target.value })
-    console.log('Odkud: ', formInputData.odkud)
-    console.log('Kam: ',formInputData.kam)
-
+  const onChangeFrom = (value: string) => {
+    setFrom(value);
+    console.log(`selected ${value}`);
   };
 
-  // when user selects date, store the change
+  const onChangeTo = (value: string) => {
+    setTo(value);
+    console.log(`selected ${value}`);
+  };
+
+
+
+
   const onDatepickerChange = (
     value: DatePickerProps['value'],
     dateString: string,
   ) => {
-    setFormDateData({ datum : dateString })
-    console.log('Formatted Selected Time: ', formDateData.datum);
+   setDate( dateString );
+   console.log(dateString);
   };
+
+
+
 
  const sendFilterRequest = () => {
 
-    console.log('Send request to backend!');
+    if ( from !== undefined && to !== undefined && date !== undefined){
+      setErrorForm(false);
+        const postData = {
+          date,
+          from,
+          to
+        }
+        const json = JSON.stringify(postData);
+
+        postPath(setLoadingPaths,setErrorPaths,setSuccesPaths,setPaths,json)
+    }
+    else{
+      setErrorForm(true);
+      console.log({from,to,date})
+    }
 
 
   };
 
+  useEffect(()=>{
+
+    getLocations(setLoadingPage,setErrorPage,setSuccesPage,setStations);
+
+  },[])
+
+  useEffect(()=> {console.log(paths)},[paths])
+
 
   return (
-    <div className="App">
-      <div className='InputsContainer'>
-        <Input className='Input' name='odkud' placeholder="Zadajte východziu stanicu" allowClear onChange={onInputChange} />
-        <Input className='Input' name='kam' placeholder="Zadajte cielovu stanicu" allowClear onChange={onInputChange} />
+      <div className="App">
+      {loadingPage && (
+          <Space size="middle">
+            <Spin size="large" />
+            </Space>)}
+
+      {errorPage && (
+          <Space size="middle">
+            <Text type="danger">Chyba na pripojeni servera</Text>
+          </Space>
+      )}
+        {succesPage && (
+            <div>
+              <div className='InputsContainer'>
+                <Row>
+                <Space>
+                  <Select
+                        showSearch
+                        style={{
+                          width: "350px"
+                        }}
+                        placeholder="Zadajte východziu stanicu"
+                        optionFilterProp="children"
+                        onChange={onChangeFrom}
+                        filterOption={(input, option) =>
+                          (option!.children as unknown as string).toLowerCase().includes(input.toLowerCase())
+                        }
+                      >
+                      {stations.map((value)=> <Option value={value}>{value}</Option>)}
+                  </Select>
+                    </Space>
+                </Row>
+                <Row>
+                <Space>
+
+                  <Select
+                    showSearch
+                                            style={{
+                          width: "350px"
+                        }}
+                    placeholder="Zadajte odchodziu stanicu"
+                    optionFilterProp="children"
+                    onChange={onChangeTo}
+                    filterOption={(input, option) =>
+                      (option!.children as unknown as string).toLowerCase().includes(input.toLowerCase())
+                    }
+                  >
+                    {stations.map((value)=> <Option value={value}>{value}</Option>)}
+                  </Select>
+                </Space>
+                </Row>
+              <Row>
+              <div className='DatepickerContainer'>
+                <DatePicker showTime onChange={onDatepickerChange} name='datum'/>
+              </div>
+              </Row>
+              <Row>
+              <div className='buttonContainer'>
+                <Button onClick={sendFilterRequest} type="primary">Odoslať</Button>
+              </div>
+              </Row>
+              </div>
+
+              <div>
+                  {errorForm && (
+                              <Text type="danger">Zadajte vsetky informacie</Text>
+                  )}
+
+                  {!errorForm && loadingPaths && !errorPaths && (
+                                <Space size="middle">
+                                  <Spin size="large" />
+                               </Space>
+                  )}
+                  {!errorForm && !errorPaths&& !loadingPaths && succesPaths && paths.length>0 && (
+
+                          paths.map((value) =>
+                          <div>
+                            <Text>Trid value {value.TRID}</Text>
+                            <Table columns={columns} dataSource={value.path}/>
+                          </div>
+
+                      ))}
+
+                  {!errorForm && !loadingPaths && succesPaths && paths.length  == 0 && (
+                      <Text type="danger">Bolo najdenych 0 spojov</Text>
+                  )}
+
+              </div>
+            </div>
+
+
+        )}
       </div>
-      <div className='DatepickerContainer'>
-        <DatePicker showTime onChange={onDatepickerChange} name='datum'/>
-      </div>
-      <div className='buttonContainer'>
-        <Button onClick={sendFilterRequest} type="primary">Odoslať</Button>
-      </div>
-      <div>
-        <Table columns={columns} dataSource={data} />
-      </div>
-    </div>
-  );
+  )
+
 }
 
 export default App;
+
+//
