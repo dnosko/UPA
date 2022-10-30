@@ -11,3 +11,7 @@ Make sure to create your own kaggle account and generate your own API KEY
 
 ## How to run
 
+- make create_env
+- source venv/bin/activate
+- pip install -r requirements.txt
+- make run
