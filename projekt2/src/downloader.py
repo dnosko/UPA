@@ -19,7 +19,7 @@ class DataDownloader:
         if not os.path.isdir(self.data_folder):
             try:
                 print("Creating directory...")
-                os.mkdir(folder)
+                os.makedirs(folder)
             except OSError:
                 print("Creation of the directory %s failed" % os.path)
 
