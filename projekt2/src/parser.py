@@ -30,3 +30,6 @@ class DataParser:
                     self.dataframes["2020"] = df
                 if cleaned_df.empty:
                     cleaned_df = df.filter(['Timestamp'], axis=1)
+
+    def concat_all_df(self) -> pd.DataFrame:
+        return pd.concat([self.dataframes['2018'], self.dataframes['2019'], self.dataframes['2020']])

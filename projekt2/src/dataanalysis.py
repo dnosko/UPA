@@ -24,9 +24,7 @@ class DataAnalysis:
         return df.agg({'min', 'max', 'mean', 'median'})
 
     def print_numerical_range(self):
-        for i in self.numerical_analysis.columns:
-            min_v, max_v = self.numerical_analysis.loc['min', i], self.numerical_analysis.loc['max', i]
-            print(i, f'({min_v}, {max_v})')
+        print(self.numerical_analysis.transpose().to_string())
 
     def print_categorical_range(self):
         print(self.categories_values.to_string())
