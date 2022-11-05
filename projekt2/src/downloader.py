@@ -7,7 +7,7 @@ from src.constants import NUM_OF_EXPECTED_CVS
 
 class DataDownloader:
 
-    def __init__(self, DATASET_PATH = "parulpandey/2020-it-salary-survey-for-eu-region", folder='data/download_data/'):
+    def __init__(self, DATASET_PATH = "parulpandey/palmer-archipelago-antarctica-penguin-data", folder='data/download_data/'):
 
         self.api = KaggleApi()
         self.api.authenticate()
@@ -19,7 +19,7 @@ class DataDownloader:
         if not os.path.isdir(self.data_folder):
             try:
                 print("Creating directory...")
-                os.mkdir(folder)
+                os.makedirs(self.data_folder)
             except OSError:
                 print("Creation of the directory %s failed" % os.path)
 
