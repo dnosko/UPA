@@ -6,9 +6,8 @@ def main():
     downloader = DataDownloader()
     parser = DataParser(downloader.data_folder, downloader.data_files)
     parser.parse_data()
-    analyzer = DataAnalysis(parser.dataframes['2019'])
-    analyzer.analyze_attribute()
-    #print(parser.dataframes["2019"])
+    df = parser.concat_all_df()
+    analyzer = DataAnalysis(df)
 
 if __name__ == "__main__":
     main()
