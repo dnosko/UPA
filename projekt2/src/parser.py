@@ -14,7 +14,8 @@ class DataParser:
         df = pd.DataFrame()
 
         for file in self.files:
-            with open(file, mode='r') as csv_file:
-                df_tmp = pd.read_csv(csv_file)
-                df = pd.concat([df, df_tmp], axis=1)
+            print(file)
+            if(re.match("(\w|[0-9]|/| )*_lter.csv", file)):
+                with open(file, mode='r') as csv_file:
+                    df = pd.read_csv(csv_file)
         return df
