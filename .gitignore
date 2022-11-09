@@ -3,7 +3,7 @@ client/node_modules
 client/build
 /coverage
 /.idea
-/.vscode
+*/.vscode
 projekt1/data/download_data/*
 projekt1/data/extract_data/*
 projekt2/data/download_data/*
