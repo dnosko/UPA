@@ -16,28 +16,33 @@ def make_charts(analyzer, show=False):
 
 
 def find_outliers(analyzer, show=False):
-    analyzer.find_outliers(df=analyzer.numerical, show_fig=show, fig_location='outliers.png')
+    analyzer.find_outliers_3sigma(df=analyzer.numerical, show_fig=show, fig_location='outliers.png')
     analyzer.find_outliers_sex('male', show_fig=show, fig_location='outliersMales.png')
     analyzer.find_outliers_sex('female', show_fig=show, fig_location='outliersFemales.png')
     analyzer.find_outliers_species('Adelie', show_fig=show, fig_location='outliersAdelie.png')
     analyzer.find_outliers_species('Chinstrap', show_fig=show, fig_location='outliersChinstrap.png')
     analyzer.find_outliers_species('Gentoo', show_fig=show, fig_location='outliersGentoo.png')
+    analyzer.find_outliers_IQR(analyzer.df)
 
-
-def print_dataset_info(analyzer):
-    analyzer.print_numerical_range()
-    analyzer.print_categories_vars_unique()
-
+def correlation(analyzer):
+    df_all = analyzer.numerical.drop(['Sample Number'], axis=1)
+    corr = analyzer.correlation(df_all)
+    print('Correlation all species\n', corr.round(3).to_string())
+    analyzer.correlation_chart(df_all, show_fig=False, fig_location='corr.png')
+    penguins = ['Adelie', 'Gentoo', 'Chinstrap']
+    for p in penguins:
+        analyzer.correlation_species(p)
 
 def main():
     downloader = DataDownloader()
     parser = DataParser(downloader.data_folder, downloader.data_files)
 
     analyzer = DataAnalysis(parser.df)
-    print_dataset_info(analyzer)
+    analyzer.analyze_attributes()
     make_charts(analyzer, show=False)
     analyzer.find_missing_values()
     find_outliers(analyzer, show=False)
+    correlation(analyzer)
 
 
 if __name__ == "__main__":

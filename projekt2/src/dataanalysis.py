@@ -11,14 +11,12 @@ from scipy.stats import zscore
 class DataAnalysis:
 
     def __init__(self, df: pd.DataFrame):
-        self.df = df
-        self.types = self.df.dtypes
-        self.change_df_types()
+        self.original_df = df
+        self.types = self.original_df.dtypes
+        self.df = self.change_df_types(self.original_df)
         self.numerical = self.df.select_dtypes(include='number')
         self.categories = self.df.select_dtypes(include='category')
         self.timestamps = self.df.select_dtypes(include='timedelta')
-        self.numerical_analysis = self.numerical_analysis(self.numerical)
-        self.categories_values = self.get_categories_values(self.categories)
         self.chart_dir = self.create_chart_directory('charts')
 
     def create_chart_directory(self, name):
@@ -33,29 +31,29 @@ class DataAnalysis:
 
         return chart_dir
 
-    def change_df_types(self):
-        self.df['Date Egg'] = pd.to_datetime(self.df['Date Egg'])
-        objects_df = self.df.select_dtypes(include="object")
+    def change_df_types(self, df):
+        df_new = df
+        df_new['Date Egg'] = pd.to_datetime(df['Date Egg'])
+        objects_df = df.select_dtypes(include="object")
 
         for i in objects_df.columns:
-            self.df[i] = self.df[i].astype("category")
+            df_new[i] = df[i].astype("category")
+        return df_new
 
-    def numerical_analysis(self, df):
-        return df.agg({'min', 'max', 'mean', 'median'})
+    def numerical_analysis(self):
+        print(self.original_df.describe().transpose().round(decimals=2).to_string())
 
-    def print_numerical_range(self):
-        print(self.numerical_analysis.transpose().to_string())
-
-    def print_categorical_range(self):
-        print(self.categories_values.to_string())
+    def categorical_analysis(self):
+        print(self.df.describe(include=['category']).transpose().to_string())
+        self.print_categories_vars_unique()
 
     def print_categories_vars_unique(self):
         for i in self.categories.columns:
             print(self.categories[i].unique())
 
     def analyze_attributes(self):
-        self.print_numerical_range()
-        self.print_categorical_range()
+        self.numerical_analysis()
+        self.categorical_analysis()
 
     def get_categories_values(self, categories):
         cat_vals_dic = {}
@@ -100,6 +98,7 @@ class DataAnalysis:
                          hue_order=["FEMALE", "MALE"], )
         ax.legend(loc="upper center", ncol=2)
         ax.set(ylabel="Body Mass [g]", xlabel="Species", title='Body mass across species')
+        plt.tight_layout()
         self._show_fig(fig_location, show_fig)
 
     def histogram_species_on_island(self, show_fig=True, fig_location=None):
@@ -110,6 +109,7 @@ class DataAnalysis:
         sns.displot(data=df, kind='hist', x='Species', hue='Sex', col='Island', multiple='dodge',
                     palette={"FEMALE": "pink", "MALE": "skyblue"},
                     hue_order=["FEMALE", "MALE"], legend='upper center')
+        plt.tight_layout()
         self._show_fig(fig_location, show_fig)
 
     def pair_grid(self, attr=None, palette=None, hue_order=None, show_fig=True, fig_location=None):
@@ -121,7 +121,7 @@ class DataAnalysis:
         g.map_offdiag(sns.scatterplot)
         g.map_diag(sns.kdeplot)
         g.add_legend()
-
+        plt.tight_layout()
         self._show_fig(fig_location, show_fig)
 
     def flipper_len_on_islands_kde(self, show_fig, fig_location=None):
@@ -130,6 +130,7 @@ class DataAnalysis:
         df = self.filter_sex(df, valid=True)
         df = self.parse_species_without_latin(df)
         sns.displot(data=df, x="Flipper Length (mm)", hue='Species', col='Island', kind='kde', legend='upper center')
+        plt.tight_layout()
         self._show_fig(fig_location, show_fig)
 
     def swarmplot_sex_species(self, show_fig, fig_location=None):
@@ -161,7 +162,18 @@ class DataAnalysis:
         df = df[(df.isnull().sum(axis=1) > 1)]
         print(df.to_string())
 
-    def find_outliers(self, df: pd.DataFrame, show_fig, fig_location=None):
+    def find_outliers_IQR(self, df):
+        df = df.select_dtypes(include='number')
+        Q1 = df.quantile(0.25)
+        Q3 = df.quantile(0.75)
+        IQR = Q3 - Q1
+
+        outliers = df[((df < (Q1 - 1.5 * IQR)) | (df > (Q3 + 1.5 * IQR))).any(axis=1)]
+        print(outliers)
+        return outliers
+
+
+    def find_outliers_3sigma(self, df: pd.DataFrame, show_fig, fig_location=None):
         df_z = df.apply(zscore)
         outliers = df_z
         for num_col in outliers.columns:
@@ -185,9 +197,25 @@ class DataAnalysis:
         sex = sex.upper()
         df = self.df
         sex = df[df['Sex'].isin([sex]) == True].select_dtypes(include='number')
-        self.find_outliers(sex, show_fig=show_fig, fig_location=fig_location)
+        self.find_outliers_3sigma(sex, show_fig=show_fig, fig_location=fig_location)
 
     def find_outliers_species(self, species, show_fig, fig_location=None):
         df = self.parse_species_without_latin(self.df)
         species = df[df['Species'].isin([species]) == True].select_dtypes(include='number')
-        self.find_outliers(species, show_fig=show_fig, fig_location=fig_location)
+        self.find_outliers_3sigma(species, show_fig=show_fig, fig_location=fig_location)
+
+
+    def correlation(self, df):
+        corr = df.corr()
+        return corr
+
+    def correlation_species(self, species):
+        df = self.parse_species_without_latin(self.df)
+        species_df = df[df['Species'].isin([species]) == True].select_dtypes(include='number').drop(['Sample Number'], axis=1)
+        corr = self.correlation(species_df)
+        print(f'Correlation {species}\n', corr.to_string())
+
+    def correlation_chart(self, df, show_fig, fig_location=None):
+        g = sns.PairGrid(df)
+        g.map(sns.scatterplot)
+        self._show_fig(show_figure=show_fig, fig_location=fig_location)
