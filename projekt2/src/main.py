@@ -3,6 +3,7 @@ import os
 from src.downloader import DataDownloader
 from src.parser import DataParser
 from src.dataanalysis import DataAnalysis
+from src.datamining import DataMiner
 
 
 def make_charts(analyzer, show=False):
@@ -45,5 +46,9 @@ def main():
     correlation(analyzer)
 
 
+    miner = DataMiner(parser.df)
+    miner.resolve_missing_values()
+    miner.transformations()
+    
 if __name__ == "__main__":
     main()
