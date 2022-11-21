@@ -49,6 +49,7 @@ def main():
     miner = DataMiner(parser.df)
     miner.resolve_missing_values()
     miner.transformations()
+    miner.save_datasets()
     
 if __name__ == "__main__":
     main()

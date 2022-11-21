@@ -151,4 +151,5 @@ dmypy.json
 
 # kaggle sensitive info
 kaggle.json
-
+charts/
+result_datasets/

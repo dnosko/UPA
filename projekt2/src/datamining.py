@@ -1,11 +1,8 @@
 from pathlib import Path
 
 import pandas as pd
-import seaborn as sns
-import matplotlib.pyplot as plt
 import numpy as np
 import os
-from scipy.stats import zscore
 
 
 class DataMiner:
@@ -15,6 +12,7 @@ class DataMiner:
         self.df1 = self.clear_irrelevant_columns()
         self.df2 = self.clear_irrelevant_columns()
         self.resolve_missing_values()
+        self.datasets_dir = self.create_resultdataset_directory('result_datasets')
 
     def clear_irrelevant_columns(self):
         df = self.original_df[
@@ -60,24 +58,24 @@ class DataMiner:
 
         # lists containing means
         culmen_depth_means = [
-            gentoo_df["Culmen Depth (mm)"].mean(),
-            adelie_df["Culmen Depth (mm)"].mean(),
-            chinstrap_df["Culmen Depth (mm)"].mean(),
+            gentoo_df["Culmen Depth (mm)"].mean().round(2),
+            adelie_df["Culmen Depth (mm)"].mean().round(2),
+            chinstrap_df["Culmen Depth (mm)"].mean().round(2),
         ]
         culmen_length_means = [
-            gentoo_df["Culmen Length (mm)"].mean(),
-            adelie_df["Culmen Length (mm)"].mean(),
-            chinstrap_df["Culmen Length (mm)"].mean(),
+            gentoo_df["Culmen Length (mm)"].mean().round(2),
+            adelie_df["Culmen Length (mm)"].mean().round(2),
+            chinstrap_df["Culmen Length (mm)"].mean().round(2),
         ]
         flipper_length_means = [
-            gentoo_df["Flipper Length (mm)"].mean(),
-            adelie_df["Flipper Length (mm)"].mean(),
-            chinstrap_df["Flipper Length (mm)"].mean(),
+            gentoo_df["Flipper Length (mm)"].mean().round(2),
+            adelie_df["Flipper Length (mm)"].mean().round(2),
+            chinstrap_df["Flipper Length (mm)"].mean().round(2),
         ]
         body_mass_means = [
-            gentoo_df["Body Mass (g)"].mean(),
-            adelie_df["Body Mass (g)"].mean(),
-            chinstrap_df["Body Mass (g)"].mean(),
+            gentoo_df["Body Mass (g)"].mean().round(2),
+            adelie_df["Body Mass (g)"].mean().round(2),
+            chinstrap_df["Body Mass (g)"].mean().round(2),
         ]
 
         # replace missing values with means
@@ -137,3 +135,24 @@ class DataMiner:
         print("DATAFRAME WITH TRANSFORMED CATEGORIES:")
         print(self.df2)
 
+    def create_resultdataset_directory(self, name):
+        main_folder = Path(__file__).parent.parent.resolve()
+        dataset_dir = os.path.join(main_folder, name)
+        if not os.path.isdir(dataset_dir):
+            try:
+                print("Creating directory...")
+                os.makedirs(dataset_dir)
+            except OSError:
+                print("Creation of the directory %s failed" % os.path)
+
+        return dataset_dir
+
+    def save_datasets(self):
+        if self.datasets_dir:
+            # save last 50 rows
+            df1 = self.df1.tail(50)
+            df2 = self.df2.tail(50)
+            location1 = os.path.join(self.datasets_dir, 'dataset1.csv')
+            location2 = os.path.join(self.datasets_dir, 'dataset2.csv')
+            df1.to_csv(location1)
+            df2.to_csv(location2)
