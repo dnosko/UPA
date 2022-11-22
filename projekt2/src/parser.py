@@ -15,7 +15,11 @@ class DataParser:
 
         for file in self.files:
             print(file)
-            if(re.match("(\w|[0-9]|/| )*_lter.csv", file)):
+            filename = file.split('/')[-1:][0]
+            if(re.match("(\w|[0-9]|/| )*penguins_lter.csv", filename)):
                 with open(file, mode='r') as csv_file:
                     df = pd.read_csv(csv_file)
+                    print(df)
+            else:
+            	print('nomatch')
         return df
