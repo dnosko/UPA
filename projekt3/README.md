@@ -11,3 +11,6 @@ xosval03
 Versace EU - https://www.versace.com/eu/en/
 Konkrétne kategória: https://www.versace.com/eu/en/women/accessories/
 
+## Spustenie
+
+- ./run.sh - vracia iba 20 položiek v tsv súbore
