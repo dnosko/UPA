@@ -6,11 +6,19 @@ xziska03
 xnosko05
 xosval03
 
-## Zvolený eshop
+## Chosen website
 
 Versace EU - https://www.versace.com/eu/en/
-Konkrétne kategória: https://www.versace.com/eu/en/women/accessories/
+Category: https://www.versace.com/eu/en/women/accessories/
 
-## Spustenie
+## How to run
 
-- ./run.sh - vracia iba 20 položiek v tsv súbore
+#### Quick run
+Returns only 20 items in .tsv file.
+- ./run.sh
+
+#### Run
+- ./build.sh
+- source venv/bin/activate
+- python3 -m src.urls
+- python3 -m src.products data.tsv
