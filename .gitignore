@@ -4,8 +4,9 @@ client/build
 /coverage
 /.idea
 /.vscode
-data/download_data/*
-data/extract_data/*
+projekt1/data/download_data/*
+projekt1/data/extract_data/*
+projekt2/data/download_data/*
 
 # misc
 client/.DS_Store
@@ -147,3 +148,8 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# kaggle sensitive info
+kaggle.json
+charts/
+result_datasets/
